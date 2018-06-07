@@ -21,6 +21,9 @@ __pycache__
 */.swo
 #mat data
 *.mat
+*.gdf
+*.dat
+*.hdf5
 
 *.DS_Store
 # Byte-compiled / optimized / DLL files
