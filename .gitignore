@@ -2,11 +2,12 @@
 #
 /sim
 /test
-
+/data
 #video
 *.mp4
 *.npy
 #Jupyter
+*.ipynb
 .pynb_checkpoints
 .pynb_checkpoints/*
 funsO/.pynb_checkpoints
@@ -18,8 +19,10 @@ __pycache__
 *.swp
 *.swo
 */.swo
+#mat data
+*.mat
 
-
+*.DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
