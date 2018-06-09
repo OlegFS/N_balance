@@ -1,29 +1,24 @@
+# Script for the second sampling experiment
 import nest
 import nest.raster_plot
-import time
-from numpy import exp
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-import scipy.stats as sps
-from itertools import product
-from pathlib import Path
-from func.brunel import fixed_brunel 
-from func.brunel import save_dict
-from func.brunel_meta import meta_brunel,disconnected_brunel, stim_brunel
-from func.helpers import return_sc
+import matplotlib.pyplot as plt
+#import seaborn as sns
+#sns.set_context('talk')
+from func.brunel_meta import *
+from func.helpers import *
 
 # Transition probability for N stim neurons 
 directory   = 'test'
 simulation = 'init'
 
-j = 0.85*1.5
+j = 0.82*1.5
 g = 4.0
 eta = 0.5
 d =  [3.5]
 sim_time = 110
-Tprob = np.zeros([10,5000])
-for ind,i in enumerate(np.arange(40,50,1)):
+Tprob = np.zeros([40,5000])
+for ind,i in enumerate(np.arange(1,40,1)):
     for tr in np.arange(5000):
         A = stim_brunel(directory= directory,
              simulation = simulation,
@@ -31,6 +26,7 @@ for ind,i in enumerate(np.arange(40,50,1)):
              eta = np.round(eta,decimals=3),
              d=d, # synaptic delay
              J=j, #synaptic strength NE =800, # fraction of inh neurons
+             NE = 800,
              NI= 200,
              N_rec = 1000,
              epsilon = 0.1,
@@ -44,6 +40,6 @@ for ind,i in enumerate(np.arange(40,50,1)):
         A.run()
         sc = return_sc('test/','init',(3.5,103.5),N=1000,bin_size = 1)
         Tprob[ind,tr] = np.sum(sc)
-    np.save('test/StimTransitionProb_40_50',Tprob)
+    np.save('test/StimTransitionProb_ex2_1_50',Tprob)
 
 
