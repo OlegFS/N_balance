@@ -35,6 +35,7 @@ class meta_brunel(object):
                 epsilon = 0.1,
                 tauMem= 40.0,
                 simtime=1000,
+                master_seed = 1000,
                 verbose = True,
                 chunk = False,
                 chunk_size = 10,
@@ -82,7 +83,7 @@ class meta_brunel(object):
             print('Connection Probability: %s'%(epsilon))
 
         #Set the RNG seeds for each thread
-        self.master_seed = 1000
+        self.master_seed = master_seed#2000#1000
         self.n_vp = nest.GetKernelStatus('total_num_virtual_procs')
         self.msdrange1 = range(self.master_seed, self.master_seed+self.n_vp)
         self.pyrngs = [ np.random.RandomState(s) for s in self.msdrange1]
