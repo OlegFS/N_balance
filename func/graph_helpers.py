@@ -6,7 +6,7 @@ import numpy as np
 from itertools import product
 import networkx as nx
 import pandas
-
+import h5py as h5py
 
 def FixedInGraph(N,degrees,replace = True):
     """Generate connectivity with fixed in-degree
