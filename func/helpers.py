@@ -417,7 +417,7 @@ def burst_times(path,
         thr = 5*sigma
     indx = np.where(sc>(thr))[0]
     if len(indx)>0:
-        indx = indx[np.hstack([np.array([True]),np.diff(indx)>2])]
+        indx = indx[np.hstack([np.array([True]),np.diff(indx)>1])]
         if add_size:
             size = [sc[ind] for ind in indx]
     elif add_size:
