@@ -594,6 +594,7 @@ class stim_brunel(meta_brunel):
             
         if init_voltage:
             self.vinit = np.random.normal(10,3.5,[self.NE+self.NI]) #for FR = 0.1
+            #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
             nest.SetStatus(self.nodes_al, "V_m", self.vinit)
         #nest.SetStatus(self.ispikes,[{"label": "brunel-py-in",
         #                         "withtime": True,
