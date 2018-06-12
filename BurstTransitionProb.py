@@ -22,8 +22,8 @@ g = 4.0
 eta = 0.5
 d =  [3.5]
 sim_time = 110
-Tprob = np.zeros([10,5000])
-for ind,i in enumerate(np.arange(40,50,1)):
+Tprob = np.zeros([50,5000])
+for ind,i in enumerate(np.arange(1,50,1)):
     for tr in np.arange(5000):
         A = stim_brunel(directory= directory,
              simulation = simulation,

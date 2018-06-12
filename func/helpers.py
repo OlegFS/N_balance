@@ -16,7 +16,7 @@ import os
 import h5py as h5py
 import pandas
 from scipy.interpolate import splrep, sproot, splev
-
+na = np.array
 
 def unfoldTimes(ts,gids,n_units):
     ts_unit= []
@@ -412,8 +412,8 @@ def burst_times(path,
     if np.max(ts)<t2/4:
         return []
     sc,_=np.histogram(ts,np.arange(t1,t2,bin_size))
-    sigma =np.median(sc/0.6745)
     if thr == None:
+        sigma =np.median(sc/0.6745)
         thr = 5*sigma
     indx = np.where(sc>(thr))[0]
     if len(indx)>0:

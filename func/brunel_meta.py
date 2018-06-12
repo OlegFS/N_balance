@@ -548,7 +548,7 @@ class ExcitatoryBrunel(meta_brunel):
             
 class stim_brunel(meta_brunel):
 
-    def build(self,amp = 0,init_voltage = False):
+    def build(self,amp = 0,init_voltage = False,nu = 0.15):
         #Initialization of the parameters of the integrate and fire neuron and the synapses. The parameter of the neuron are stored in a dictionary.
         self.neuron_params = {"C_m":self.CMem,
                          "tau_m":self.tauMem,
@@ -593,7 +593,8 @@ class stim_brunel(meta_brunel):
                                      "to_file": True}])
             
         if init_voltage:
-            self.vinit = np.random.normal(10,3.5,[self.NE+self.NI]) #for FR = 0.1
+            _ = self.get_analytical_V(nu)
+            self.vinit = np.random.normal(self.mu_an,self.sigma_an,[self.NE+self.NI]) #for FR = 0.1
             #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
             nest.SetStatus(self.nodes_al, "V_m", self.vinit)
         #nest.SetStatus(self.ispikes,[{"label": "brunel-py-in",
@@ -611,7 +612,6 @@ class stim_brunel(meta_brunel):
                                            'start': c_start,
                                            'stop': c_stop+t_stim+fade_out})#10e4
         self.built = True
-
     def connect(self,n_ext=1,Poisson=True):
         """Connect nodes"""
         if self.built ==False:
@@ -668,6 +668,25 @@ class stim_brunel(meta_brunel):
         nest.Connect(self.nodes_in, self.nodes_ex+self.nodes_in,
                      self.conn_params_in, syn_spec =self.syn_dict_in)
 
+    def get_analytical_V(self,nu=0.15):
+        #Analytical mean and std
+	#J = self.j#(0.85*1.5)
+	#eta = 0.5
+	#Ce = 800*0.1
+	#tau = 0.04 # membrane timescale in s
+        tau = self.tauMem/1000
+        self.nu_thr = self.theta/(self.J*self.CE*tau)
+	#nu = 0.15
+	#g= 4
+        self.gamma = self.CI/self.CE
+        mu_int = self.CE*self.J*(1-(self.gamma*self.g))*nu*tau
+        mu_ext = (self.CE*self.J*(self.eta*self.nu_thr)*tau)
+        self.mu_an = mu_int+mu_ext
+        sigma_int = self.J*np.sqrt(self.CE*(1+(self.gamma*(self.g**2)))*nu*tau)
+        sigma_ext = self.J*np.sqrt((self.CE*(self.eta*self.nu_thr)*tau))
+        self.sigma_an = np.sqrt((sigma_int**2)+(sigma_ext**2))
+        print(self.mu_an,self.sigma_an)
+        return self.mu_an, self.sigma_an
 class PoisBrunel(meta_brunel):
     def build(self):
         
