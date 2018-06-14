@@ -226,6 +226,7 @@ def read_voltage(mypath,
             simulation (str): Simulation name
             N (int): Number of neurons
             t (tuple: int,int): time of the simulation to load (ms)
+            TODO: fix the time (now it reads the whole simulation)
             nice_format (bool): reshape into [unit X time]
             
     Returns:
@@ -249,7 +250,8 @@ def read_voltage(mypath,
     # reformat the data
     if nice_format:
         unit = 2
-        voltage = np.zeros([N,t2-1]) 
+        length = data[data[:,0]==unit][:,2].shape[0]
+        voltage = np.zeros([N,length]) 
         for i,unit in enumerate(np.arange(1,N+1)):
             voltage[i,:] = data[data[:,0]==unit][:,2]
         return voltage

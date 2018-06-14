@@ -46,8 +46,8 @@ j = 0.85*1.5
 g = 4.0
 eta = 0.5
 d =  [3.5]
-sim_time = 110
-repeat = 5000
+sim_time = 410
+repeat = 5000 
 x = 40
 Tprob = np.zeros([x,repeat])
 RealTsp_e = np.zeros([x,repeat])
@@ -70,16 +70,16 @@ for ind,i in enumerate(np.arange(1,x,1)):
              chunk= False,
              chunk_size= 50000,
             voltage = False)
-        A.build(amp =10e16,init_voltage = True,nu = 0.137)
+        A.build(amp =10e16,c_start = 299.,init_voltage = False,nu = 0.137)
         A.connect(n_ext=i,Poisson=True)
         A.run()
-        sc = return_sc('test/','init',(3.5,103.5),N=1000,bin_size = 1)
+        sc = return_sc('test/','init',(303.5,403.5),N=1000,bin_size = 1)
         Tprob[ind,tr] = np.sum(sc)
-        sc = return_sc('test/','init',(0,100),bin_size=0.5,cells = 'ex')
-        RealTsp_e[ind,tr] = sc[6]
-        sc = return_sc('test/','init',(0,100),bin_size=0.5,cells = 'in')
-        RealTsp_i[ind,tr] = sc[6]
-    np.save('test/StimTransitionProb_ex3_fixedNu',Tprob)
-    np.save('test/StimTransitionProb_ex3_1_40_realScE',Tprob)
-    np.save('test/StimTransitionProb_ex3_1_40_realScI',Tprob)
+        sc = return_sc('test/','init',(0,400),bin_size=1,cells = 'ex')
+        RealTsp_e[ind,tr] = sc[300]
+        sc = return_sc('test/','init',(0,400),bin_size=1,cells = 'in')
+        RealTsp_i[ind,tr] = sc[300]
+    np.save('test/StimTransitionProb_ex3_no_init_part2',Tprob)
+    np.save('test/StimTransitionProb_ex3_1_40_realScE_testi_part2',RealTsp_e)
+    np.save('test/StimTransitionProb_ex3_1_40_realScIi_part2',RealTsp_i)
 

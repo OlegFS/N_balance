@@ -548,7 +548,7 @@ class ExcitatoryBrunel(meta_brunel):
             
 class stim_brunel(meta_brunel):
 
-    def build(self,amp = 0,init_voltage = False,nu = 0.15):
+    def build(self,amp = 0,c_start = 0,init_voltage = False,nu = 0.15):
         #Initialization of the parameters of the integrate and fire neuron and the synapses. The parameter of the neuron are stored in a dictionary.
         self.neuron_params = {"C_m":self.CMem,
                          "tau_m":self.tauMem,
@@ -603,9 +603,9 @@ class stim_brunel(meta_brunel):
 
         # DC stimulation
         t_stim = 0.             # perturbation time (time of the extra spike)
-        fade_out = 0.0#0.5*self.delay[0]      # fade out time (ms) *0.5
-        c_start = 2.4
-        c_stop = 3.5
+        fade_out = 0.5*self.delay[0]      # fade out time (ms) *0.5
+        c_start =c_start# 2.4
+        c_stop = c_start#3.5
         self.amp = amp
         self.current = nest.Create("dc_generator",
                                    params={'amplitude': self.amp,
@@ -646,8 +646,9 @@ class stim_brunel(meta_brunel):
             nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
 
         #Stimulation
-
-        nest.Connect(self.current, self.nodes_al[:n_ext])#
+        self.random_slice_start = np.random.int(1,self.NE) 
+        self.random_slice_stop =self.random_slice_start +n_ext
+        nest.Connect(self.current,self.nodes_al[self.random_slice_start:self.random_slice_stop])#
 
         nest.Connect(self.nodes_al[:self.N_rec],self.espikes, syn_spec=self.syn_dict)
         #nest.Connect(self.nodes_in[:self.N_rec] ,self.ispikes, syn_spec=self.syn_dict)
