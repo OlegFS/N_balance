@@ -593,8 +593,10 @@ class stim_brunel(meta_brunel):
                                      "to_file": True}])
             
         if init_voltage:
-            _ = self.get_analytical_V(nu)
-            self.vinit = np.random.normal(self.mu_an,self.sigma_an,[self.NE+self.NI]) #for FR = 0.1
+            #_ = self.get_analytical_V(nu)
+            self.mu_s = 10.
+            self.sigma_s = 2.7
+            self.vinit = np.random.normal(self.mu_s,self.sigma_s,[self.NE+self.NI]) #for FR = 0.1
             #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
             nest.SetStatus(self.nodes_al, "V_m", self.vinit)
         #nest.SetStatus(self.ispikes,[{"label": "brunel-py-in",
@@ -646,10 +648,11 @@ class stim_brunel(meta_brunel):
             nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
 
         #Stimulation
-        self.random_slice_start = np.random.int(1,self.NE) 
+        self.random_slice_start = np.random.randint(1,self.NE) 
         self.random_slice_stop =self.random_slice_start +n_ext
         nest.Connect(self.current,self.nodes_al[self.random_slice_start:self.random_slice_stop])#
 
+        print(self.random_slice_start)
         nest.Connect(self.nodes_al[:self.N_rec],self.espikes, syn_spec=self.syn_dict)
         #nest.Connect(self.nodes_in[:self.N_rec] ,self.ispikes, syn_spec=self.syn_dict)
         if self.record_vol:
