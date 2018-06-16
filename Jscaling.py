@@ -19,6 +19,8 @@ d =[3.5]
 j_ =np.round(np.arange(0.8,1.5,0.01),2).tolist()#[0.81,0.82,0.83,0.84,0.85,0.86,0.87,0.88,0.89,0.9]
 values =  list(product(g_,j_))
 repeat  =False 
+NE = 8000
+NI = 2000
 sim_time = 400000
 for i in range(len(values)):
     g = values[i][0]
@@ -35,9 +37,9 @@ for i in range(len(values)):
              eta = np.round(eta,decimals=3),
              d=d, # synaptic delay
              J=j, #synaptic strength
-             NE =4000, # fraction of inh neurons
-             NI= 1000,
-             N_rec = 1000,
+             NE =NE, # fraction of inh neurons
+             NI= NI,
+             N_rec = NE+NI,
              epsilon = 0.1,
              simtime=sim_time,
              verbose = True,
