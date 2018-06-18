@@ -113,7 +113,7 @@ def from_file_pandas(fname,t2, **kwargs):
             dataFrame = pandas.read_csv(
                 f, sep='\s+', lineterminator='\n',
                 header=None, index_col=None,
-                skipinitialspace=True) #,nrows = t2
+                skipinitialspace=True)#,nrows = t2)
             newdata = dataFrame.values
         except:
             continue
@@ -417,6 +417,9 @@ def burst_times(path,
     if thr == None:
         sigma =np.median(sc/0.6745)
         thr = 5*sigma
+        print(thr)
+        if thr == 0:
+            return []
     indx = np.where(sc>(thr))[0]
     if len(indx)>0:
         indx = indx[np.hstack([np.array([True]),np.diff(indx)>2])]
