@@ -547,8 +547,8 @@ class ExcitatoryBrunel(meta_brunel):
             
             
 class stim_brunel(meta_brunel):
-
-    def build(self,amp = 0,c_start = 0,init_voltage = False,nu = 0.15):
+    dt      = float(0.005)    # the resolution in ms for the clock-based
+    def build(self,amp = 0,c_start = 0,init_voltage = False,nu = 0.15,n_st = 0):
         #Initialization of the parameters of the integrate and fire neuron and the synapses. The parameter of the neuron are stored in a dictionary.
         self.neuron_params = {"C_m":self.CMem,
                          "tau_m":self.tauMem,
@@ -570,11 +570,11 @@ class stim_brunel(meta_brunel):
         self.nu_ex = self.eta * self.nu_th
         self.p_rate = 1000.0 * self.nu_ex * self.CE
 
-        nest.SetDefaults("iaf_psc_delta", self.neuron_params)
-        nest.SetDefaults("poisson_generator",{"rate":self.p_rate})
-        self.nodes_ex = nest.Create("iaf_psc_delta",self.NE)
-        self.nodes_in = nest.Create("iaf_psc_delta",self.NI)
-        self.noise    = nest.Create("poisson_generator")
+        nest.SetDefaults("iaf_psc_delta_canon", self.neuron_params)
+        nest.SetDefaults("poisson_generator_ps",{"rate":self.p_rate})
+        self.nodes_ex = nest.Create("iaf_psc_delta_canon",self.NE)
+        self.nodes_in = nest.Create("iaf_psc_delta_canon",self.NI)
+        self.noise    = nest.Create("poisson_generator_ps")
         self.espikes  = nest.Create("spike_detector")
         if self.record_vol:
             self.voltmeter = nest.Create("multimeter")
@@ -582,6 +582,8 @@ class stim_brunel(meta_brunel):
         self.nodes_al = self.nodes_ex +self.nodes_in
         nest.SetStatus(self.espikes,[{"label": self.simulation,
                                  "withtime": True,
+                                 "precise_times":True,
+                                 "precision":50,
                                  "withgid": True,#%(n_i_),
                                  "to_file": True}])
         if self.record_vol:
@@ -594,10 +596,13 @@ class stim_brunel(meta_brunel):
             
         if init_voltage:
             #_ = self.get_analytical_V(nu)
-            self.mu_s = 10.
-            self.sigma_s = 2.7
+            self.mu_s = 9.76
+            self.sigma_s = 2.701
             self.vinit = np.random.normal(self.mu_s,self.sigma_s,[self.NE+self.NI]) #for FR = 0.1
             #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
+            self.stim_n = np.random.randint(1,self.NE, n_st)
+            self.vinit[self.stim_n] = 20.05
+            print(self.stim_n)
             nest.SetStatus(self.nodes_al, "V_m", self.vinit)
         #nest.SetStatus(self.ispikes,[{"label": "brunel-py-in",
         #                         "withtime": True,
@@ -650,6 +655,7 @@ class stim_brunel(meta_brunel):
         #Stimulation
         self.random_slice_start = np.random.randint(1,self.NE) 
         self.random_slice_stop =self.random_slice_start +n_ext
+        print(np.arange(self.random_slice_start,self.random_slice_stop))
         nest.Connect(self.current,self.nodes_al[self.random_slice_start:self.random_slice_stop])#
 
         print(self.random_slice_start)
