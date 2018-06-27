@@ -217,7 +217,8 @@ def read_voltage(mypath,
                  simulation,
                  N,
                  t,
-                 nice_format = False):
+                 nice_format = False,
+                 file_ind = 1):
     
     """Return a matrix of [unit X time, time , voltage]
     remark: Highly inefficient
@@ -243,7 +244,7 @@ def read_voltage(mypath,
     data = np.zeros([0,3])
     if len(files)>4:
         raise SizeError()
-    for file in files:   
+    for file in files[0:file_ind]:   
         print(file)
         data = np.concatenate((data,np.loadtxt(file)),axis=0)
     
@@ -326,7 +327,6 @@ def lazy_unit_isi(path,
 def return_sc(path,
             simulation,
             t= (0,5000),
-            N=1000,
             bin_size= 20,
             cells = None):
     """Computes an spike count in bins
@@ -334,7 +334,6 @@ def return_sc(path,
         path (str): Directory of the simulation with "/".
         simulation (str): Simulation name
         t (tuple): simulation time (from,until) in ms
-        N (int): Number of neurons
         bin_size (int): ms in one bins
         cells (string): 'ex' - take only excitatory neuron, 'inh' 
                         take only inhibitory neurons, anything else- 
@@ -694,7 +693,7 @@ def plot_sc(path,
     plt.plot(sc, **kwargs)
     plt.xticks(np.arange(0,len(sc)+1,10000/bin_size), np.arange(0,(len(sc)+1)*bin_size,10000))
     sigma =np.median(sc/0.6745)
-    plt.plot(np.arange(0,len(sc)),[5*sigma]*len(sc),'--',linewidth =1)
+    #plt.plot(np.arange(0,len(sc)),[5*sigma]*len(sc),'--',linewidth =1)
     #sns.despine(trim =40)
     plt.ylabel('rate')
     #print(np.mean(isi_unit_variance(ts,gids,100)))

@@ -9,11 +9,11 @@ from func.brunel_meta import *
 from func.helpers import *
 
 #
-#directory   = 'test/'
-#simulation = 'monstrous'
+directory   = 'test/'
+simulation = 'hyper'
 #
 #j =0.85*1.5
-#g = 4
+#g = 7
 #eta = 0.5#0.5
 #d =  [3.5]
 #sim_time =5000000#110
@@ -38,18 +38,18 @@ from func.helpers import *
 #A.connect()
 #A.run()
 #conn = A.get_connectivity()
-## Transition probability for N stim neurons 
-directory   = 'test'
-simulation = 'init'
-#
+### Transition probability for N stim neurons 
+#directory   = 'test'
+#simulation = 'init'
+##
 j = 0.85*1.5
-g = 4.0
+g = 7.0
 eta = 0.5
 d =  [3.5]
 sim_time = 110
 repeat =10000 
-n_st1 = 7 
-n_st2 = 8
+n_st1 = 1 
+n_st2 = 40
 Tprob = np.zeros([n_st2,repeat])
 RealTsp_e = np.zeros([n_st2,repeat])
 RealTsp_i = np.zeros([n_st2,repeat])
@@ -74,13 +74,13 @@ for ind,i in enumerate(np.arange(n_st1,n_st2,1)):
         A.build(amp =0.,c_start = 0.,init_voltage = True,nu = 0.137, n_st =i)
         A.connect(n_ext=0,Poisson=True)
         A.run()
-        sc = return_sc('test/','init',(3.5,103.5),N=1000,bin_size = 1)
+        sc = return_sc('test/','init',(3.5,103.5),bin_size = 1)
         Tprob[ind,tr] = np.sum(sc)
         sc = return_sc('test/','init',(0,10),bin_size=0.5,cells = 'ex')
         RealTsp_e[ind,tr] = sc[0]
         sc = return_sc('test/','init',(0,10),bin_size=0.5,cells = 'in')
         RealTsp_i[ind,tr] = sc[0]
-    np.save('test/StimTransitionProb_ex3_random_sl_9single_ex4',Tprob)
-    np.save('test/StimTransitionProb_ex3_1_40_realScE_random_sl_9single_4',RealTsp_e)
-    np.save('test/StimTransitionProb_ex3_1_40_realScIi_random_sl_9single_4',RealTsp_i)
+    np.save('test/StimTransitionProb_ex4_random_sl_9single_g',Tprob)
+    np.save('test/StimTransitionProb_ex4_1_40_realScE_random_sl_9single_g',RealTsp_e)
+    np.save('test/StimTransitionProb_ex4_1_40_realScIi_random_sl_9single_g',RealTsp_i)
 
