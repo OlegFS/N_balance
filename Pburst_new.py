@@ -39,48 +39,48 @@ from func.helpers import *
 #A.run()
 #conn = A.get_connectivity()
 ### Transition probability for N stim neurons 
-directory   = 'test'
-simulation = 'init'
+directory   = 'P_burst'
 #
-j = 0.85*1.5
-g = 4.0
-eta = 0.5
+j = 1.8
+g = 4.1
+eta = 0.4
 d =  [3.5]
-sim_time = 110
-repeat =10000 
-n_st1 = 1 
-n_st2 = 40
+sim_time = 140
+repeat =1000 
+n_st1 = 9
+n_st2 = 10
 Tprob = np.zeros([n_st2,repeat])
 RealTsp_e = np.zeros([n_st2,repeat])
 RealTsp_i = np.zeros([n_st2,repeat])
+simulation ='brunel_j=%s_g=%s_eta=%s_NI=%s_Nt=%s'%(j,g,eta,200,1000)
 for ind,i in enumerate(np.arange(n_st1,n_st2,1)):
-    for tr in np.arange(repeat):
-        A = stim_brunel(directory= directory,
-             simulation = simulation,
-             g=np.round(g,decimals=3), # inhibitor0y strenght
-             eta = np.round(eta,decimals=3),
-             d=d, # synaptic delay
-             J=j, #synaptic strength NE =800, # fraction of inh neurons
-             NE = 800,
-             NI= 200,
-             N_rec = 1000,
-             epsilon = 0.1,
-             simtime=sim_time,
-             master_seed = 2000,
-             verbose = False,
-             chunk= False,
-             chunk_size= 50000,
-            voltage = False)
-        A.build(amp =0.,c_start = 0.,init_voltage = True,nu = 0.137, n_st =i)
-        A.connect(n_ext=0,Poisson=True)
-        A.run()
-        sc = return_sc('test/','init',(3.5,103.5),bin_size = 1)
-        Tprob[ind,tr] = np.sum(sc)
-        sc = return_sc('test/','init',(0,10),bin_size=0.5,cells = 'ex')
-        RealTsp_e[ind,tr] = sc[0]
-        sc = return_sc('test/','init',(0,10),bin_size=0.5,cells = 'in')
-        RealTsp_i[ind,tr] = sc[0]
-    np.save('test/StimTransitionProb_ex4_random_sl_9single_g',Tprob)
-    np.save('test/StimTransitionProb_ex4_1_40_realScE_random_sl_9single_g',RealTsp_e)
-    np.save('test/StimTransitionProb_ex4_1_40_realScIi_random_sl_9single_g',RealTsp_i)
-
+#for tr in np.arange(repeat):
+    A = stim_brunel(directory= directory,
+         simulation = simulation,
+         g=np.round(g,decimals=3), # inhibitor0y strenght
+         eta = np.round(eta,decimals=3),
+         d=d, # synaptic delay
+         J=j, #synaptic strength NE =800, # fraction of inh neurons
+         NE = 800,
+         NI= 200,
+         N_rec = 1000,
+         epsilon = 0.1,
+         simtime=sim_time,
+         master_seed = 2000,
+         verbose = False,
+         chunk= False,
+         chunk_size= 50000,
+        voltage = False)
+    A.build(amp =0.,c_start = 0.,init_voltage = True,nu = 0.137)#, n_st =i)
+    A.connect(n_ext=0,Poisson=True)
+    A.run(repeat = 15,n_st = i,prime = True)
+#    sc = return_sc(directory,simulation,(3.5,103.5),bin_size = 1)
+#    Tprob[ind,tr] = np.sum(sc)
+#    sc = return_sc(directory,simulation,(0,10),bin_size=0.5,cells = 'ex')
+#    RealTsp_e[ind,tr] = sc[0]
+#    sc = return_sc(directory,simulation(0,10),bin_size=0.5,cells = 'in')
+#    RealTsp_i[ind,tr] = sc[0]
+#    np.save(directory+'/'+'Tprob',Tprob)
+#    np.save(directory+'/'+'Tprob_realScE_random_sl',RealTsp_e)
+#    np.save(directory+'/'+'Tprob_realScI_random_sl',RealTsp_i)
+#
