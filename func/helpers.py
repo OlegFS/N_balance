@@ -115,6 +115,7 @@ def from_file_pandas(fname,t2, **kwargs):
                 header=None, index_col=None,
                 skipinitialspace=True)#,nrows = t2)
             newdata = dataFrame.values
+            newdata = dataFrame.values
         except:
             continue
 
@@ -218,7 +219,7 @@ def read_voltage(mypath,
                  N,
                  t,
                  nice_format = False,
-                 file_ind = 1):
+                 file_ind = 4):
     
     """Return a matrix of [unit X time, time , voltage]
     remark: Highly inefficient
@@ -252,6 +253,9 @@ def read_voltage(mypath,
     if nice_format:
         unit = 2
         length = data[data[:,0]==unit][:,2].shape[0]
+        print(data[data[:,0]==0][:,2].shape, data[data[:,0]==1][:,2].shape,
+             data[data[:,0]==2][:,2].shape)
+        print(data.shape)
         voltage = np.zeros([N,length]) 
         for i,unit in enumerate(np.arange(1,N+1)):
             voltage[i,:] = data[data[:,0]==unit][:,2]
@@ -298,7 +302,6 @@ def lazy_unit_rate(path,
     fr = np.zeros([N])
     for ind,i in enumerate(np.arange(1,N+1)):
         fr[ind] = len(ts[np.where(gid==i+1)[0]])/(sim_time)
-    
     return fr
 
 def lazy_unit_isi(path,
@@ -641,14 +644,15 @@ def plot_raster(path,
                 N,
                 u_id=(0,8000),
                 marker=1,
-                inh= False):    
+                inh= False,
+                **kwargs ):    
     id_1,id_n = u_id
     t1,t2 = t
     #ts1,gids1 = load_ts(simulation,t1,t2)
     ts1,gids1 = load_sim(path,simulation,t)
 
     #plt.figure(figsize=(15,5))
-    plt.plot(ts1,gids1,'.k',markersize =marker)
+    plt.plot(ts1,gids1,'.k',markersize =marker,**kwargs)
     plt.xlim([t1,t2])
     plt.ylim([id_1,id_n])
     plt.ylabel('unit id')
@@ -691,7 +695,6 @@ def plot_sc(path,
     sc,_=np.histogram(ts1,np.arange(t1,t2+1,bin_size))
     sc = sc#/N
     plt.plot(sc, **kwargs)
-    plt.xticks(np.arange(0,len(sc)+1,10000/bin_size), np.arange(0,(len(sc)+1)*bin_size,10000))
     sigma =np.median(sc/0.6745)
     #plt.plot(np.arange(0,len(sc)),[5*sigma]*len(sc),'--',linewidth =1)
     #sns.despine(trim =40)

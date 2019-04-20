@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/nest/nest-install/lib/python3.6/site-packages')
+
 import nest
 import nest.raster_plot
 import time
@@ -15,10 +18,10 @@ class meta_brunel(object):
     threads = 4
     built = False
     connected = False
-    dt      = float(0.05)    # the resolution in ms for the clock-based
-    CMem = 1.0
+    dt      = float(0.1)    # the resolution in ms for the clock-based
+    CMem =1.0
     V_m = 0.0
-    V_res = 10.0
+    V_res = 10.0#10
     t_ref = 2.0
     theta = 20.0
 
@@ -27,13 +30,13 @@ class meta_brunel(object):
                 directory = 'test',
                 g=7, # inhibitory strenght
                 eta = 3.5, #Poisson rate ratio
-                d=[3.5,5.5], # synaptic delay
+                d=[3.5], # synaptic delay
                 J=0.1, #synaptic strength
                 NE =8000, # fraction of inh neurons
                 NI =2000,
                 N_rec = 50,
                 epsilon = 0.1,
-                tauMem= 40.0,
+                tauMem= 20.0,
                 simtime=1000,
                 master_seed = 1000,
                 verbose = True,
@@ -46,7 +49,7 @@ class meta_brunel(object):
         self.simulation = simulation
         nest.ResetKernel()
         if verbose ==False:
-            nest.set_verbosity("M_FATAL")
+            nest.set_verbosity("M_ALL")
         if not os.path.exists(self.data_path):
             os.makedirs(self.data_path)
             print('”Writing data to :'+self.data_path)
@@ -85,6 +88,7 @@ class meta_brunel(object):
         #Set the RNG seeds for each thread
         self.master_seed = master_seed#2000#1000
         self.n_vp = nest.GetKernelStatus('total_num_virtual_procs')
+        print(self.n_vp)
         self.msdrange1 = range(self.master_seed, self.master_seed+self.n_vp)
         self.pyrngs = [ np.random.RandomState(s) for s in self.msdrange1]
         self.msdrange2 = range(self.master_seed+self.n_vp+1, self.master_seed+1+2*self.n_vp)
@@ -100,9 +104,11 @@ class meta_brunel(object):
                          "E_L": 0.0,
                          "V_reset": self.V_res,
                          "V_m": self.V_m,
-                         "V_th":self.theta}
+                         "V_th":self.theta,
+                         "refractory_input": False}
         if self.verbose:
             print(self.neuron_params)
+
 
         self.J_ex  =self.J       # amplitude of excitatory postsynaptic potential
         self.J_in  = -self.g*self.J_ex # amplitude of inhibitory postsynaptic potential
@@ -113,7 +119,7 @@ class meta_brunel(object):
         self.nu_th =self.theta / (self.J * self.CE * self.tauMem)# (theta * CMem) / (J_ex * CE * exp(1) * tauMem * tauSyn)
         self.nu_ex = self.eta * self.nu_th
         self.p_rate = 1000.0 * self.nu_ex * self.CE
-        
+        print(self.p_rate, self.nu_ex)        
         nest.SetDefaults("iaf_psc_delta", self.neuron_params)
         nest.SetDefaults("poisson_generator",{"rate":self.p_rate})
         self.nodes_ex = nest.Create("iaf_psc_delta",self.NE)
@@ -131,7 +137,7 @@ class meta_brunel(object):
         if self.record_vol:
             nest.SetStatus(self.voltmeter,[{"label": self.simulation+'_voltage',
                                     'record_from': ['V_m'],
-                                    'interval':0.05,
+                                    'interval':self.dt,
                                      "withtime": True,
                                      "withgid": True,#%(n_i_),
                                      "to_file": True}])
@@ -140,12 +146,14 @@ class meta_brunel(object):
         #                         "withgid": True}])#%(n_i_)"to_file": True
         self.built = True
     def connect(self):
+        print(nest.GetStatus([1],'C_m'))
         """Connect nodes"""
         if self.built ==False:
             raise BuildError('Build the network first')
 
         nest.CopyModel("static_synapse","excitatory",{"weight":self.J_ex})
         nest.CopyModel("static_synapse","inhibitory",{"weight":self.J_in})
+
         if len(self.delay)<2:
             self.delay = self.delay[0]
             print('sinlge delay')
@@ -190,8 +198,10 @@ class meta_brunel(object):
         nest.Connect(self.nodes_in, self.nodes_ex+self.nodes_in,
                      self.conn_params_in, syn_spec =self.syn_dict_in)
 
-    def run(self):
-        """run the simulation"""
+    def run(self,stim=0,stim_eta = 0.5,stim_tim = 5000,n_trials = 1):
+        """run the simulation
+        Chunk - to prevent from running unnecessary
+        stim - with extra Poiss inoput"""
         print("Simulating")
         # New option to simulate in chunk and check a special condition in between
         # Thus we avoid unwanted condition
@@ -207,9 +217,24 @@ class meta_brunel(object):
                     print('Rate is too high. Finishing simulation at %s ms'%(self.ch))
                     self.simtime = self.ch
                     break
+        elif stim==1:
+            self.nu_th= self.theta / (self.J * self.CE * self.tauMem)## (theta * CMem) / (J_ex * CE * exp(1) * tauMem * tauSyn)
+            self.new_nu_ex = stim_eta * self.nu_th
+            self.new_p_rate = 1000.0 * self.new_nu_ex  * self.CE
+            
+            
+            self.add_noise    = nest.Create("poisson_generator")
+            nest.Simulate(self.simtime)
+            nest.SetStatus(self.add_noise,{"rate":self.new_p_rate})
+            nest.Connect(self.add_noise,self.nodes_ex[:100], syn_spec=self.syn_dict)
+            nest.Connect(self.add_noise,self.nodes_in[:100], syn_spec=self.syn_dict)
+            for trial in range(n_trials):   
+                nest.SetStatus(self.add_noise,{"rate":self.new_p_rate})
+                nest.Simulate(stim_tim)
+                nest.SetStatus(self.add_noise,{"rate":0.0})
+                nest.Simulate(10000)
         else:
             nest.Simulate(self.simtime)
-
         self.events_ex = nest.GetStatus(self.espikes,"n_events")[0]
         #self.events_in = nest.GetStatus(self.ispikes,"n_events")[0]
 
@@ -367,8 +392,9 @@ class fixedOutDeg_brunel(meta_brunel):
                     'delay': {'distribution': 'uniform', 'low': self.d_min,
                               'high': self.d_max},
                    }
-        nest.Connect(self.noise,self.nodes_ex, syn_spec=self.syn_dict)
-        nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
+        nest.Connect(self.noise,self.nodes_al, syn_spec=self.syn_dict)
+        #nest.Connect(self.noise,self.nodes_ex, syn_spec=self.syn_dict)
+        #nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
 
         nest.Connect(self.nodes_al[:self.N_rec],self.espikes, syn_spec=self.syn_dict)
         #nest.Connect(self.nodes_in[:self.N_rec] ,self.ispikes, syn_spec=self.syn_dict)
@@ -396,30 +422,17 @@ class disconnected_brunel(meta_brunel):
 
         nest.CopyModel("static_synapse","excitatory",{"weight":self.J_ex})
         nest.CopyModel("static_synapse","inhibitory",{"weight":self.J_in})
-        if len(self.delay)<2:
-            self.delay = self.delay[0]
-            print('sinlge delay')
-            self.syn_dict = {'model': 'excitatory',
-                    'delay':self.delay,
-                   }
-            self.syn_dict_in = {'model': 'inhibitory',
-                    'delay':self.delay,
-                   }
-        else:
-            self.d_min = self.delay[0]#3.5
-            self.d_max = self.delay[1]#5.5
-            self.syn_dict = {'model': 'excitatory',
-                    'delay':{'distribution': 'uniform', 'low': self.d_min,
-                             'high': self.d_max},
-                   }
-            print('uniform delay')
+        self.delay = self.delay[0]
+        print('sinlge delay')
+        self.syn_dict = {'model': 'excitatory',
+                'delay':self.delay,
+               }
+        self.syn_dict_in = {'model': 'inhibitory',
+                'delay':self.delay,
+               }
 
-            self.syn_dict_in = {'model': 'inhibitory',
-                    'delay': {'distribution': 'uniform', 'low': self.d_min,
-                              'high': self.d_max},
-                   }
-        nest.Connect(self.noise,self.nodes_ex, syn_spec=self.syn_dict)
-        nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
+        nest.Connect(self.noise,self.nodes_al, syn_spec=self.syn_dict)
+        #nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
 
         nest.Connect(self.nodes_al[:self.N_rec],self.espikes, syn_spec=self.syn_dict)
         #nest.Connect(self.nodes_in[:self.N_rec] ,self.ispikes, syn_spec=self.syn_dict)
@@ -548,7 +561,7 @@ class ExcitatoryBrunel(meta_brunel):
             
 class stim_brunel(meta_brunel):
     dt      = float(0.005)    # the resolution in ms for the clock-based
-    def build(self,amp = 0,c_start = 0,init_voltage = False,nu = 0.15,n_st = 0):
+    def build(self,amp = 0,c_start = 0,init_voltage = False,nu = 0.15):#n_st = 0):
         #Initialization of the parameters of the integrate and fire neuron and the synapses. The parameter of the neuron are stored in a dictionary.
         self.neuron_params = {"C_m":self.CMem,
                          "tau_m":self.tauMem,
@@ -595,29 +608,28 @@ class stim_brunel(meta_brunel):
                                      "to_file": True}])
             
         if init_voltage:
-            #_ = self.get_analytical_V(nu)
+        #    #_ = self.get_analytical_V(nu)
             self.mu_s = 9.76
             self.sigma_s = 2.701
-            self.vinit = np.random.normal(self.mu_s,self.sigma_s,[self.NE+self.NI]) #for FR = 0.1
-            #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
-            self.stim_n = np.random.randint(1,self.NE, n_st)
-            self.vinit[self.stim_n] = 20.05
-            print(self.stim_n)
-            nest.SetStatus(self.nodes_al, "V_m", self.vinit)
+        #    self.vinit = np.random.normal(self.mu_s,self.sigma_s,[self.NE+self.NI]) #for FR = 0.1
+        #    #self.vinit = np.random.normal(10,3.7,[self.NE+self.NI]) #for FR = 0.1
+        #    self.stim_n = np.random.randint(1,self.NE, n_st)
+        #    print(self.stim_n)
+        #    nest.SetStatus(self.nodes_al, "V_m", self.vinit)
         #nest.SetStatus(self.ispikes,[{"label": "brunel-py-in",
         #                         "withtime": True,
         #                         "withgid": True}])#%(n_i_)"to_file": True
 
         # DC stimulation
-        t_stim = 0.             # perturbation time (time of the extra spike)
-        fade_out = 0.5*self.delay[0]      # fade out time (ms) *0.5
-        c_start =c_start# 2.4
-        c_stop = c_start#3.5
-        self.amp = amp
-        self.current = nest.Create("dc_generator",
-                                   params={'amplitude': self.amp,
-                                           'start': c_start,
-                                           'stop': c_stop+t_stim+fade_out})#10e4
+        #t_stim = 0.             # perturbation time (time of the extra spike)
+        #fade_out = 0.5*self.delay[0]      # fade out time (ms) *0.5
+        #c_start =c_start# 2.4
+        #c_stop = c_start#3.5
+        #self.amp = amp
+        #self.current = nest.Create("dc_generator",
+        #                           params={'amplitude': self.amp,
+        #                                   'start': c_start,
+        #                                   'stop': c_stop+t_stim+fade_out})#10e4
         self.built = True
     def connect(self,n_ext=1,Poisson=True):
         """Connect nodes"""
@@ -653,12 +665,12 @@ class stim_brunel(meta_brunel):
             nest.Connect(self.noise,self.nodes_in, syn_spec=self.syn_dict)
 
         #Stimulation
-        self.random_slice_start = np.random.randint(1,self.NE) 
-        self.random_slice_stop =self.random_slice_start +n_ext
-        print(np.arange(self.random_slice_start,self.random_slice_stop))
-        nest.Connect(self.current,self.nodes_al[self.random_slice_start:self.random_slice_stop])#
+        #self.random_slice_start = np.random.randint(1,self.NE) 
+        #self.random_slice_stop =self.random_slice_start +n_ext
+        #print(np.arange(self.random_slice_start,self.random_slice_stop))
+        #nest.Connect(self.current,self.nodes_al[self.random_slice_start:self.random_slice_stop])#
 
-        print(self.random_slice_start)
+        #print(self.random_slice_start)
         nest.Connect(self.nodes_al[:self.N_rec],self.espikes, syn_spec=self.syn_dict)
         #nest.Connect(self.nodes_in[:self.N_rec] ,self.ispikes, syn_spec=self.syn_dict)
         if self.record_vol:
@@ -677,6 +689,29 @@ class stim_brunel(meta_brunel):
         self.conn_params_in = {'rule': 'fixed_indegree', 'indegree': self.CI}
         nest.Connect(self.nodes_in, self.nodes_ex+self.nodes_in,
                      self.conn_params_in, syn_spec =self.syn_dict_in)
+
+    def run(self,repeat,n_st,prime = False):
+        """run the simulation"""
+        print("Simulating")
+        # New option to simulate in chunk and check a special condition in between
+        # Thus we avoid unwanted condition
+        for rep in range(repeat):
+            if prime==True:
+                nest.SetStatus(self.nodes_al,"V_m", np.zeros([self.NE+self.NI]))
+                nest.Simulate(350.0)
+                self.vinit = np.array(nest.GetStatus(self.nodes_al,"V_m"))
+                print(np.mean(self.vinit),np.std(self.vinit))
+            else:
+                self.mu_s =0# 7.5
+                self.sigma =0.5# 3.3
+                self.vinit = np.random.normal(self.mu_s,self.sigma_s,[self.NE+self.NI]) #for FR = 0.1
+            if n_st>0:
+                self.stim_n = np.random.randint(1,self.NE, n_st)
+                self.vinit[self.stim_n] =20.05# self.theta+0.05#20.05
+                print(self.stim_n)
+            print(np.sum(self.vinit>20.0),'spikes')
+            nest.SetStatus(self.nodes_al, "V_m", self.vinit)
+            nest.Simulate(self.simtime)
 
     def get_analytical_V(self,nu=0.15):
         #Analytical mean and std

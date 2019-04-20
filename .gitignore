@@ -3,6 +3,12 @@
 /sim
 /test
 /data
+*.png
+*.pdf
+*.eps
+*.csv
+*.tex
+/figs
 #video
 *.mp4
 *.npy
